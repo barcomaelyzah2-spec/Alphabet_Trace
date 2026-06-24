@@ -8,24 +8,24 @@
   body {
     text-align: center;
     font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-    background: linear-gradient(to bottom, #ffecd2, #fcb69f);
+    background: linear-gradient(to bottom, #e0f7fa, #80deea);
     padding: 20px;
     margin: 0;
     user-select: none;
   }
 
   h1 { 
-    color: #4a4a4a; 
+    color: #006064; 
     margin-bottom: 10px;
     font-size: 2.5rem;
     text-shadow: 2px 2px 0px #fff;
   }
 
   .color-container {
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     font-size: 1.2rem;
     font-weight: bold;
-    color: #4a4a4a;
+    color: #006064;
   }
 
   #colorPicker {
@@ -47,7 +47,7 @@
   }
 
   canvas {
-    border: 4px dashed #ff7675;
+    border: 4px dashed #00838f;
     background: transparent;
     border-radius: 15px;
     touch-action: none;
@@ -59,7 +59,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 240px;
+    font-size: 260px;
     font-weight: bold;
     color: rgba(0, 0, 0, 0.07);
     pointer-events: none;
@@ -99,13 +99,13 @@
     border-radius: 15px;
     display: inline-block;
     min-width: 250px;
-    border: 2px solid #ffccd5;
+    border: 2px solid #b2ebf2;
   }
 
   #result {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #4a4a4a;
+    color: #006064;
     margin-bottom: 5px;
   }
 
@@ -118,7 +118,7 @@
   #totalScore {
     font-size: 1.3rem;
     font-weight: bold;
-    color: #4a4a4a;
+    color: #006064;
     margin-top: 5px;
   }
 </style>
@@ -129,7 +129,7 @@
 
 <div class="color-container">
   <label for="colorPicker">🎨 Pick Crayon: </label> 
-  <input type="color" id="colorPicker" value="#e74c3c">
+  <input type="color" id="colorPicker" value="#9c27b0">
 </div>
 
 <div class="wrap">
@@ -154,11 +154,10 @@ const ctx = canvas.getContext("2d");
 let drawing = false;
 
 let rawPointsCount = 0; 
+let evaluationTimeout = null; 
 
-// The amount of tracing line required to complete a letter smoothly
-const REQUIRED_POINTS = 55;
-
-const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+// Updated to uppercase Alphabet array
+const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 let index = 0;
 
 let totalScore = 0;
@@ -168,19 +167,20 @@ function speakLetter(letter) {
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel(); 
     let msg = new SpeechSynthesisUtterance("Trace the letter " + letter);
-    msg.rate = 0.85; // Slower cadence for children
+    msg.rate = 0.9;
     speechSynthesis.speak(msg);
   }
 }
 
 function updateLetter() {
-  document.getElementById("guideLetter").innerText = letters[index];
-  speakLetter(letters[index]);
+  document.getElementById("guideLetter").innerText = alphabet[index];
+  speakLetter(alphabet[index]);
 }
 
 // Mouse Controls
 canvas.addEventListener("mousedown", (e) => {
   if (letterDone) return;
+  clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
   const coords = getMousePos(e);
@@ -188,11 +188,15 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mouseup", () => {
+  if (!drawing) return;
   drawing = false;
+  startAutoCheckTimer();
 });
 
 canvas.addEventListener("mouseleave", () => {
+  if (!drawing) return;
   drawing = false;
+  startAutoCheckTimer();
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -204,6 +208,7 @@ canvas.addEventListener("mousemove", (e) => {
 // Touch Controls
 canvas.addEventListener("touchstart", (e) => {
   if (letterDone) return;
+  clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
   const coords = getTouchPos(e);
@@ -212,7 +217,9 @@ canvas.addEventListener("touchstart", (e) => {
 }, { passive: false });
 
 canvas.addEventListener("touchend", () => {
+  if (!drawing) return;
   drawing = false;
+  startAutoCheckTimer();
 });
 
 canvas.addEventListener("touchmove", (e) => {
@@ -237,7 +244,7 @@ function getTouchPos(e) {
 
 function drawStroke(x, y) {
   ctx.strokeStyle = document.getElementById("colorPicker").value;
-  ctx.lineWidth = 16; // Bold crayon style line
+  ctx.lineWidth = 14; 
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
@@ -245,14 +252,18 @@ function drawStroke(x, y) {
   ctx.stroke();
   
   rawPointsCount++;
-  
-  // Real-time complete check: triggers instantly when they trace enough
-  if (rawPointsCount >= REQUIRED_POINTS) {
-    checkTrace();
+}
+
+// Gives multi-stroke letters (like A, E, H, T) plenty of time to be drawn
+function startAutoCheckTimer() {
+  clearTimeout(evaluationTimeout);
+  if (rawPointsCount > 0 && !letterDone) {
+    evaluationTimeout = setTimeout(checkTrace, 1200);
   }
 }
 
 function clearCanvas() {
+  clearTimeout(evaluationTimeout);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   rawPointsCount = 0;
   letterDone = false;
@@ -261,13 +272,13 @@ function clearCanvas() {
 }
 
 function checkTrace() {
-  if (letterDone) return;
+  if (letterDone || rawPointsCount === 0) return;
 
-  if (rawPointsCount < REQUIRED_POINTS) {
+  if (rawPointsCount < 20) {
+    document.getElementById("result").innerText = "Keep tracing to finish!";
     return;
   }
 
-  // Success route reached!
   document.getElementById("result").innerText = "Correct! +5 Points";
   document.getElementById("stars").innerText = "⭐⭐⭐⭐⭐";
 
@@ -277,13 +288,13 @@ function checkTrace() {
   letterDone = true;
 
   if ('speechSynthesis' in window) {
-    let msg = new SpeechSynthesisUtterance("Super job! Beautiful tracing!");
+    let msg = new SpeechSynthesisUtterance("Super job! You got 5 points!");
     speechSynthesis.speak(msg);
   }
 }
 
 function nextLetter() {
-  index = (index + 1) % letters.length;
+  index = (index + 1) % alphabet.length;
   clearCanvas();
   updateLetter();
 }
