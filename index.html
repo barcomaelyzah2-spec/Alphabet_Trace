@@ -253,11 +253,11 @@ function drawStroke(x, y) {
   rawPointsCount++;
 }
 
-// Gives a 5-second window for kids to lift their fingers between strokes (like crossing a 'T' or 'A')
+// Gives a 1.2-second window for kids to lift their fingers between strokes (like crossing a 'T' or 'A')
 function startAutoCheckTimer() {
   clearTimeout(evaluationTimeout);
   if (rawPointsCount > 0 && !letterDone) {
-    evaluationTimeout = setTimeout(checkTrace, 5000);
+    evaluationTimeout = setTimeout(checkTrace, 1200);
   }
 }
 
