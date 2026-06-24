@@ -1,355 +1,307 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Fun Learning Games</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alphabet Tracing Simulator</title>
 <style>
-body{
-  font-family:Arial;
-  text-align:center;
-  background:linear-gradient(to right,#ffecd2,#fcb69f);
-}
+  body {
+    text-align: center;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    background: linear-gradient(to bottom, #ffecd2, #fcb69f);
+    padding: 20px;
+    margin: 0;
+    user-select: none;
+  }
 
-h1{
-  color:#333;
-}
+  h1 { 
+    color: #4a4a4a; 
+    margin-bottom: 10px;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 0px #fff;
+  }
 
-button{
-  padding:10px 15px;
-  margin:5px;
-  font-size:16px;
-  border-radius:10px;
-  cursor:pointer;
-  border:none;
-  background:#4CAF50;
-  color:white;
-}
+  .color-container {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4a4a4a;
+  }
 
-button:hover{
-  background:#45a049;
-}
+  #colorPicker {
+    border: none;
+    background: transparent;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    vertical-align: middle;
+  }
 
-.hidden{display:none;}
+  .wrap {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    border-radius: 20px;
+    background: white;
+    padding: 10px;
+  }
 
-.game-box{
-  background:white;
-  padding:15px;
-  border-radius:15px;
-  margin:15px auto;
-  width:350px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.2);
-}
+  canvas {
+    border: 4px dashed #ff7675;
+    background: transparent;
+    border-radius: 15px;
+    touch-action: none;
+    display: block;
+  }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(4,60px);
-  gap:10px;
-  justify-content:center;
-  margin-top:10px;
-}
+  .guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 240px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.07);
+    pointer-events: none;
+    font-family: Arial, sans-serif;
+  }
 
-.box{
-  width:60px;
-  height:60px;
-  background:lightgray;
-  border-radius:10px;
-  cursor:pointer;
-}
+  .controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 
-.score, .lives{
-  font-weight:bold;
-  color:#222;
-  margin:5px 0;
-}
+  button {
+    padding: 12px 28px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.1s, filter 0.1s;
+  }
 
-.lives{
-  color:red;
-}
+  button:active {
+    transform: scale(0.95);
+  }
+
+  .clear { background: #ff7675; color: white; }
+  .next { background: #2ecc71; color: white; }
+
+  .stats-panel {
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 15px;
+    display: inline-block;
+    min-width: 250px;
+    border: 2px solid #ffccd5;
+  }
+
+  #result {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4a4a4a;
+    margin-bottom: 5px;
+  }
+
+  .stars {
+    font-size: 35px;
+    height: 45px;
+    color: gold;
+  }
+
+  #totalScore {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #4a4a4a;
+    margin-top: 5px;
+  }
 </style>
 </head>
-
 <body>
 
-<h1>🎮 Fun Learning Games</h1>
+<h1>Alphabet Tracing Simulator</h1>
 
-<!-- MENU -->
-<div id="menu" class="game-box">
-<h3>Choose Game:</h3>
-<button onclick="showGame('color')">🎨 Color</button>
-<button onclick="showGame('shape')">🔷 Shape</button>
-<button onclick="showGame('memory')">🧠 Memory</button>
-<button onclick="showGame('count')">🔢 Counting</button>
-<button onclick="showGame('animal')">🐾 Animal</button>
+<div class="color-container">
+  <label for="colorPicker">🎨 Pick Crayon: </label> 
+  <input type="color" id="colorPicker" value="#e74c3c">
 </div>
 
-<!-- COLOR GAME -->
-<div id="color" class="hidden game-box">
-<h2>🎨 Color Game</h2>
-<p class="score">Score: <span id="scoreColor">0</span></p>
-<p class="lives">Lives: <span id="livesColor">3</span></p>
-<p id="colorQ"></p>
-<div>
-<button style="background:red;width:60px;height:60px;" onclick="checkColor('red')"></button>
-<button style="background:blue;width:60px;height:60px;" onclick="checkColor('blue')"></button>
-<button style="background:yellow;width:60px;height:60px;" onclick="checkColor('yellow')"></button>
-<button style="background:green;width:60px;height:60px;" onclick="checkColor('green')"></button>
-<button style="background:purple;width:60px;height:60px;" onclick="checkColor('purple')"></button>
-</div>
-<p id="colorResult"></p>
-<button onclick="back()">Back</button>
+<div class="wrap">
+  <div class="guide" id="guideLetter">A</div>
+  <canvas id="canvas" width="350" height="350"></canvas>
 </div>
 
-<!-- SHAPE GAME -->
-<div id="shape" class="hidden game-box">
-<h2>🔷 Shape Game</h2>
-<p class="score">Score: <span id="scoreShape">0</span></p>
-<p class="lives">Lives: <span id="livesShape">3</span></p>
-<p id="shapeQ"></p>
-<div id="shapeOptions"></div>
-<p id="shapeResult"></p>
-<button onclick="back()">Back</button>
+<div class="controls">
+  <button class="clear" onclick="clearCanvas()">🧹 Clear</button>
+  <button class="next" onclick="nextLetter()">➡️ Next Letter</button>
 </div>
 
-<!-- MEMORY GAME -->
-<div id="memory" class="hidden game-box">
-<h2>🧠 Memory Game</h2>
-<p class="score">Score: <span id="scoreMemory">0</span></p>
-<p class="lives">Lives: <span id="livesMemory">3</span></p>
-<div class="grid" id="memoryGrid"></div>
-<p id="memoryResult"></p>
-<button onclick="back()">Back</button>
+<div class="stats-panel">
+  <div id="result">Draw on the letter!</div>
+  <div class="stars" id="stars"></div>
+  <div id="totalScore">Total Score: 0</div>
 </div>
-
-<!-- COUNT GAME -->
-<div id="count" class="hidden game-box">
-<h2>🔢 Counting Game</h2>
-<p class="score">Score: <span id="scoreCount">0</span></p>
-<p class="lives">Lives: <span id="livesCount">3</span></p>
-<p id="countQ"></p>
-<div id="countOptions"></div>
-<p id="countResult"></p>
-<button onclick="back()">Back</button>
-</div>
-
-<!-- ANIMAL GAME -->
-<div id="animal" class="hidden game-box">
-<h2>🐾 Animal Game</h2>
-<p class="score">Score: <span id="scoreAnimal">0</span></p>
-<p class="lives">Lives: <span id="livesAnimal">3</span></p>
-<p id="animalQ"></p>
-<button onclick="animal('cat')">🐱</button>
-<button onclick="animal('dog')">🐶</button>
-<button onclick="animal('cow')">🐮</button>
-<button onclick="animal('duck')">🦆</button>
-<p id="animalResult"></p>
-<button onclick="back()">Back</button>
-</div>
-
-<!-- SOUNDS -->
-<audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
-<audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 
 <script>
-let lives = 3;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
+
+let rawPointsCount = 0; 
+let evaluationTimeout = null; 
+
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let index = 0;
+
 let totalScore = 0;
+let letterDone = false;
 
-// Reset lives and score for each game
-function resetGame(gameId){
-  lives = 3;
-  totalScore = 0;
-  document.getElementById("scoreColor").innerText = 0;
-  document.getElementById("scoreShape").innerText = 0;
-  document.getElementById("scoreMemory").innerText = 0;
-  document.getElementById("scoreCount").innerText = 0;
-  document.getElementById("scoreAnimal").innerText = 0;
+function speakLetter(letter) {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel(); 
+    let msg = new SpeechSynthesisUtterance("Trace the letter " + letter);
+    msg.rate = 0.9;
+    speechSynthesis.speak(msg);
+  }
+}
+
+function updateLetter() {
+  document.getElementById("guideLetter").innerText = letters[index];
+  speakLetter(letters[index]);
+}
+
+// Mouse Controls
+canvas.addEventListener("mousedown", (e) => {
+  if (letterDone) return;
+  clearTimeout(evaluationTimeout); 
+  drawing = true;
+  ctx.beginPath();
+  const coords = getMousePos(e);
+  ctx.moveTo(coords.x, coords.y);
+});
+
+canvas.addEventListener("mouseup", () => {
+  if (!drawing) return;
+  drawing = false;
+  startAutoCheckTimer();
+});
+
+canvas.addEventListener("mouseleave", () => {
+  if (!drawing) return;
+  drawing = false;
+  startAutoCheckTimer();
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!drawing || letterDone) return;
+  const coords = getMousePos(e);
+  drawStroke(coords.x, coords.y);
+});
+
+// Touch Controls
+canvas.addEventListener("touchstart", (e) => {
+  if (letterDone) return;
+  clearTimeout(evaluationTimeout); 
+  drawing = true;
+  ctx.beginPath();
+  const coords = getTouchPos(e);
+  ctx.moveTo(coords.x, coords.y);
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchend", () => {
+  if (!drawing) return;
+  drawing = false;
+  startAutoCheckTimer();
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!drawing || letterDone) return;
+  const coords = getTouchPos(e);
+  drawStroke(coords.x, coords.y);
+  e.preventDefault();
+}, { passive: false });
+
+function getMousePos(e) {
+  return { x: e.offsetX, y: e.offsetY };
+}
+
+function getTouchPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  return {
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top
+  };
+}
+
+function drawStroke(x, y) {
+  ctx.strokeStyle = document.getElementById("colorPicker").value;
+  ctx.lineWidth = 14; 
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  ctx.lineTo(x, y);
+  ctx.stroke();
   
-  document.getElementById("livesColor").innerText = lives;
-  document.getElementById("livesShape").innerText = lives;
-  document.getElementById("livesMemory").innerText = lives;
-  document.getElementById("livesCount").innerText = lives;
-  document.getElementById("livesAnimal").innerText = lives;
+  rawPointsCount++;
 }
 
-// Update score and lives in the current game
-function addScore(game){
+// Gives a 1.2-second window for kids to lift their fingers between strokes (like crossing a 'T' or 'A')
+function startAutoCheckTimer() {
+  clearTimeout(evaluationTimeout);
+  if (rawPointsCount > 0 && !letterDone) {
+    evaluationTimeout = setTimeout(checkTrace, 1200);
+  }
+}
+
+function clearCanvas() {
+  clearTimeout(evaluationTimeout);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  rawPointsCount = 0;
+  letterDone = false;
+  document.getElementById("result").innerText = "Draw on the letter!";
+  document.getElementById("stars").innerText = "";
+}
+
+function checkTrace() {
+  if (letterDone || rawPointsCount === 0) return;
+
+  // Verify enough content was drawn
+  if (rawPointsCount < 20) {
+    document.getElementById("result").innerText = "Keep tracing to finish!";
+    return;
+  }
+
+  document.getElementById("result").innerText = "Correct! +5 Points";
+  document.getElementById("stars").innerText = "⭐⭐⭐⭐⭐";
+
   totalScore += 5;
-  document.getElementById("score"+game).innerText = totalScore;
-}
+  document.getElementById("totalScore").innerText = "Total Score: " + totalScore;
 
-function loseLife(game){
-  lives--;
-  document.getElementById("lives"+game).innerText = lives;
-  if(lives <= 0){
-    alert("💀 Game Over!");
-    resetGame();
-    back();
+  letterDone = true;
+
+  if ('speechSynthesis' in window) {
+    let msg = new SpeechSynthesisUtterance("Super job! You got 5 points!");
+    speechSynthesis.speak(msg);
   }
 }
 
-// Navigation
-function showGame(id){
-  document.querySelectorAll(".game-box").forEach(d => d.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  resetGame();
-  if(id==="color") newColorQ();
-  if(id==="shape") loadShapeGame();
-  if(id==="memory") loadMemory();
-  if(id==="count") loadCount();
-  if(id==="animal") newAnimalQ();
+function nextLetter() {
+  index = (index + 1) % letters.length;
+  clearCanvas();
+  updateLetter();
 }
 
-function back(){
-  document.querySelectorAll(".game-box").forEach(d => d.classList.add("hidden"));
-  document.getElementById("menu").classList.remove("hidden");
-}
-
-// ========== COLOR GAME ==========
-let colors = ["red","blue","yellow","green","purple"];
-let correctColor = "";
-
-function newColorQ(){
-  correctColor = colors[Math.floor(Math.random() * colors.length)];
-  document.getElementById("colorQ").innerText = "🎯 Click the color: " + correctColor.toUpperCase();
-  document.getElementById("colorResult").innerText = "";
-}
-
-function checkColor(c){
-  if(c === correctColor){
-    document.getElementById("colorResult").innerText = "✅ Correct!";
-    document.getElementById("correctSound").play();
-    addScore("Color");
-    setTimeout(newColorQ, 800);
-  } else{
-    document.getElementById("colorResult").innerText = "❌ Wrong!";
-    document.getElementById("wrongSound").play();
-    loseLife("Color");
-  }
-}
-
-// ========== SHAPE GAME ==========
-let shapes = [
-  {name:"circle", html:'<div style="width:60px;height:60px;background:red;border-radius:50%;"></div>'},
-  {name:"square", html:'<div style="width:60px;height:60px;background:blue;"></div>'},
-  {name:"triangle", html:'<div style="width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:60px solid green;"></div>'},
-  {name:"star", html:'<div style="font-size:40px;">⭐</div>'}
-];
-let correctShape = "";
-
-function loadShapeGame(){
-  let numChoices = 4;
-  let shuffled = [...shapes].sort(() => 0.5 - Math.random());
-  let choices = shuffled.slice(0, numChoices);
-  correctShape = choices[Math.floor(Math.random() * choices.length)].name;
-
-  document.getElementById("shapeQ").innerText = "🎯 Find the: " + correctShape.toUpperCase();
-  document.getElementById("shapeResult").innerText = "";
-
-  let html = "";
-  choices.forEach(shape => {
-    html += `<div onclick="checkShape('${shape.name}')" style="display:inline-block;margin:10px;cursor:pointer;">${shape.html}</div>`;
-  });
-  document.getElementById("shapeOptions").innerHTML = html;
-}
-
-function checkShape(selected){
-  if(selected === correctShape){
-    document.getElementById("shapeResult").innerText = "✅ Correct!";
-    document.getElementById("correctSound").play();
-    addScore("Shape");
-    setTimeout(loadShapeGame, 800);
-  } else{
-    document.getElementById("shapeResult").innerText = "❌ Wrong!";
-    document.getElementById("wrongSound").play();
-    loseLife("Shape");
-  }
-}
-
-// ========== MEMORY GAME ==========
-let grid = document.getElementById("memoryGrid");
-
-function loadMemory(){
-  grid.innerHTML="";
-  let values = ["red","blue","green","yellow","red","blue","green","yellow"];
-  values.sort(() => 0.5 - Math.random());
-  let selected=[];
-
-  values.forEach(color=>{
-    let box=document.createElement("div");
-    box.className="box";
-    box.onclick=function(){
-      box.style.background=color;
-      selected.push({box,color});
-      if(selected.length===2){
-        if(selected[0].color===selected[1].color){
-          addScore("Memory");
-          selected=[];
-        } else{
-          setTimeout(()=>{
-            selected[0].box.style.background="lightgray";
-            selected[1].box.style.background="lightgray";
-            selected=[];
-            loseLife("Memory");
-          },500);
-        }
-      }
-    };
-    grid.appendChild(box);
-  });
-}
-
-// ========== COUNT GAME ==========
-function loadCount(){
-  let num=Math.floor(Math.random()*10)+1;
-  document.getElementById("countQ").innerText="Select number: "+num;
-  document.getElementById("countResult").innerText="";
-  let html="";
-  for(let i=1;i<=10;i++){
-    html+=`<button onclick="checkCount(${i},${num})">${i}</button>`;
-  }
-  document.getElementById("countOptions").innerHTML=html;
-}
-
-function checkCount(ans,correct){
-  if(ans===correct){
-    document.getElementById("countResult").innerText="✅ Correct!";
-    document.getElementById("correctSound").play();
-    addScore("Count");
-    loadCount();
-  } else{
-    document.getElementById("countResult").innerText="❌ Wrong!";
-    document.getElementById("wrongSound").play();
-    loseLife("Count");
-  }
-}
-
-// ========== ANIMAL GAME ==========
-let animals=[
-  {sound:"Meow", answer:"cat"},
-  {sound:"Bark", answer:"dog"},
-  {sound:"Moo", answer:"cow"},
-  {sound:"Quack", answer:"duck"}
-];
-let currentAnimal;
-
-function newAnimalQ(){
-  currentAnimal = animals[Math.floor(Math.random()*animals.length)];
-  document.getElementById("animalQ").innerText="Which says \""+currentAnimal.sound+"\"?";
-  document.getElementById("animalResult").innerText="";
-}
-
-function animal(a){
-  if(a===currentAnimal.answer){
-    document.getElementById("animalResult").innerText="✅ Correct!";
-    document.getElementById("correctSound").play();
-    addScore("Animal");
-    newAnimalQ();
-  } else{
-    document.getElementById("animalResult").innerText="❌ Wrong!";
-    document.getElementById("wrongSound").play();
-    loseLife("Animal");
-  }
-}
+window.onload = () => {
+  updateLetter();
+};
 </script>
-
 </body>
 </html>
