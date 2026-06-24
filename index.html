@@ -22,7 +22,7 @@
   }
 
   .color-container {
-    margin-bottom: 15px;
+    margin-bottom: 25px;
     font-size: 1.2rem;
     font-weight: bold;
     color: #4a4a4a;
@@ -35,25 +35,6 @@
     height: 40px;
     cursor: pointer;
     vertical-align: middle;
-  }
-
-  /* Fun progress tracking bar for kids */
-  .progress-container {
-    width: 320px;
-    background-color: #f1f1f1;
-    border-radius: 20px;
-    margin: 10px auto 20px auto;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    overflow: hidden;
-    border: 2px solid #fff;
-  }
-
-  .progress-bar {
-    width: 0%;
-    height: 20px;
-    background: linear-gradient(to right, #ff7675, #2ecc71);
-    border-radius: 20px;
-    transition: width 0.2s ease;
   }
 
   .wrap {
@@ -151,10 +132,6 @@
   <input type="color" id="colorPicker" value="#e74c3c">
 </div>
 
-<div class="progress-container">
-  <div class="progress-bar" id="myBar"></div>
-</div>
-
 <div class="wrap">
   <div class="guide" id="guideLetter">A</div>
   <canvas id="canvas" width="350" height="350"></canvas>
@@ -177,7 +154,6 @@ const ctx = canvas.getContext("2d");
 let drawing = false;
 
 let rawPointsCount = 0; 
-let checkTimeout = null;
 
 // The amount of tracing line required to complete a letter smoothly
 const REQUIRED_POINTS = 55;
@@ -200,13 +176,11 @@ function speakLetter(letter) {
 function updateLetter() {
   document.getElementById("guideLetter").innerText = letters[index];
   speakLetter(letters[index]);
-  updateProgressBar();
 }
 
 // Mouse Controls
 canvas.addEventListener("mousedown", (e) => {
   if (letterDone) return;
-  clearTimeout(checkTimeout);
   drawing = true;
   ctx.beginPath();
   const coords = getMousePos(e);
@@ -215,12 +189,10 @@ canvas.addEventListener("mousedown", (e) => {
 
 canvas.addEventListener("mouseup", () => {
   drawing = false;
-  startAutoCheckTimer();
 });
 
 canvas.addEventListener("mouseleave", () => {
   drawing = false;
-  startAutoCheckTimer();
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -232,7 +204,6 @@ canvas.addEventListener("mousemove", (e) => {
 // Touch Controls
 canvas.addEventListener("touchstart", (e) => {
   if (letterDone) return;
-  clearTimeout(checkTimeout);
   drawing = true;
   ctx.beginPath();
   const coords = getTouchPos(e);
@@ -242,7 +213,6 @@ canvas.addEventListener("touchstart", (e) => {
 
 canvas.addEventListener("touchend", () => {
   drawing = false;
-  startAutoCheckTimer();
 });
 
 canvas.addEventListener("touchmove", (e) => {
@@ -275,50 +245,29 @@ function drawStroke(x, y) {
   ctx.stroke();
   
   rawPointsCount++;
-  updateProgressBar();
   
-  // Real-time complete check: triggers instantly if they finish while drawing
+  // Real-time complete check: triggers instantly when they trace enough
   if (rawPointsCount >= REQUIRED_POINTS) {
     checkTrace();
   }
 }
 
-function updateProgressBar() {
-  let percentage = Math.min(100, Math.floor((rawPointsCount / REQUIRED_POINTS) * 100));
-  document.getElementById("myBar").style.width = percentage + "%";
-}
-
-// Allows short pauses between lift-and-draw strokes safely (like for 'H', 'T', or 'E')
-function startAutoCheckTimer() {
-  clearTimeout(checkTimeout);
-  if (rawPointsCount > 0 && !letterDone) {
-    checkTimeout = setTimeout(checkTrace, 1500);
-  }
-}
-
 function clearCanvas() {
-  clearTimeout(checkTimeout);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   rawPointsCount = 0;
   letterDone = false;
   document.getElementById("result").innerText = "Draw on the letter!";
   document.getElementById("stars").innerText = "";
-  updateProgressBar();
 }
 
 function checkTrace() {
   if (letterDone) return;
 
-  // Check if tracing has met the line length criteria
   if (rawPointsCount < REQUIRED_POINTS) {
-    if (!drawing) {
-      document.getElementById("result").innerText = "Keep tracking! You are doing great!";
-    }
     return;
   }
 
   // Success route reached!
-  clearTimeout(checkTimeout);
   document.getElementById("result").innerText = "Correct! +5 Points";
   document.getElementById("stars").innerText = "⭐⭐⭐⭐⭐";
 
