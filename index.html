@@ -37,6 +37,15 @@
     vertical-align: middle;
   }
 
+  /* Timer styling */
+  .timer-banner {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #e74c3c;
+    margin-bottom: 10px;
+    height: 35px;
+  }
+
   .wrap {
     position: relative;
     display: inline-block;
@@ -132,6 +141,8 @@
   <input type="color" id="colorPicker" value="#e74c3c">
 </div>
 
+<div class="timer-banner" id="timerDisplay">Time Left: 5s</div>
+
 <div class="wrap">
   <div class="guide" id="guideLetter">A</div>
   <canvas id="canvas" width="350" height="350"></canvas>
@@ -156,6 +167,10 @@ let drawing = false;
 let rawPointsCount = 0; 
 let evaluationTimeout = null; 
 
+// Timer specific variables
+let timeLeft = 5;
+let timerInterval = null;
+
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 let index = 0;
 
@@ -174,11 +189,36 @@ function speakLetter(letter) {
 function updateLetter() {
   document.getElementById("guideLetter").innerText = letters[index];
   speakLetter(letters[index]);
+  resetTimer();
+}
+
+// Timer Logic Engines
+function resetTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 5;
+  document.getElementById("timerDisplay").innerText = "Time Left: " + timeLeft + "s";
+  document.getElementById("timerDisplay").style.color = "#e74c3c";
+  
+  timerInterval = setInterval(() => {
+    if (letterDone) {
+      clearInterval(timerInterval);
+      return;
+    }
+    
+    timeLeft--;
+    document.getElementById("timerDisplay").innerText = "Time Left: " + timeLeft + "s";
+    
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById("timerDisplay").innerText = "Time's Up!";
+      checkTrace(true); // Force evaluation when time runs out
+    }
+  }, 1000);
 }
 
 // Mouse Controls
 canvas.addEventListener("mousedown", (e) => {
-  if (letterDone) return;
+  if (letterDone || timeLeft <= 0) return;
   clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
@@ -199,14 +239,14 @@ canvas.addEventListener("mouseleave", () => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
-  if (!drawing || letterDone) return;
+  if (!drawing || letterDone || timeLeft <= 0) return;
   const coords = getMousePos(e);
   drawStroke(coords.x, coords.y);
 });
 
 // Touch Controls
 canvas.addEventListener("touchstart", (e) => {
-  if (letterDone) return;
+  if (letterDone || timeLeft <= 0) return;
   clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
@@ -222,7 +262,7 @@ canvas.addEventListener("touchend", () => {
 });
 
 canvas.addEventListener("touchmove", (e) => {
-  if (!drawing || letterDone) return;
+  if (!drawing || letterDone || timeLeft <= 0) return;
   const coords = getTouchPos(e);
   drawStroke(coords.x, coords.y);
   e.preventDefault();
@@ -253,11 +293,10 @@ function drawStroke(x, y) {
   rawPointsCount++;
 }
 
-// Gives a 1.2-second window for kids to lift their fingers between strokes (like crossing a 'T' or 'A')
 function startAutoCheckTimer() {
   clearTimeout(evaluationTimeout);
-  if (rawPointsCount > 0 && !letterDone) {
-    evaluationTimeout = setTimeout(checkTrace, 1200);
+  if (rawPointsCount > 0 && !letterDone && timeLeft > 0) {
+    evaluationTimeout = setTimeout(() => checkTrace(false), 1200);
   }
 }
 
@@ -268,17 +307,33 @@ function clearCanvas() {
   letterDone = false;
   document.getElementById("result").innerText = "Draw on the letter!";
   document.getElementById("stars").innerText = "";
+  resetTimer();
 }
 
-function checkTrace() {
-  if (letterDone || rawPointsCount === 0) return;
+function checkTrace(isTimeUp = false) {
+  if (letterDone) return;
 
-  // Verify enough content was drawn
+  // Verify enough line data exists
   if (rawPointsCount < 20) {
-    document.getElementById("result").innerText = "Keep tracing to finish!";
+    if (isTimeUp) {
+      document.getElementById("result").innerText = "Time's up! Try clearing to restart.";
+      if ('speechSynthesis' in window) {
+        let msg = new SpeechSynthesisUtterance("Time's up! Let's try again.");
+        speechSynthesis.speak(msg);
+      }
+      letterDone = true; // Lock canvas since time ran out
+    } else {
+      document.getElementById("result").innerText = "Keep tracing to finish!";
+    }
     return;
   }
 
+  // Clear evaluation windows and scoring tracks
+  clearTimeout(evaluationTimeout);
+  clearInterval(timerInterval);
+  
+  document.getElementById("timerDisplay").innerText = "Completed!";
+  document.getElementById("timerDisplay").style.color = "#2ecc71";
   document.getElementById("result").innerText = "Correct! +5 Points";
   document.getElementById("stars").innerText = "⭐⭐⭐⭐⭐";
 
