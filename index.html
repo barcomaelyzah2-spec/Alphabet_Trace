@@ -37,25 +37,6 @@
     vertical-align: middle;
   }
 
-  /* Kid-friendly progress tracking bar */
-  .progress-container {
-    width: 320px;
-    background-color: #f1f1f1;
-    border-radius: 20px;
-    margin: 10px auto 20px auto;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    overflow: hidden;
-    border: 2px solid #fff;
-  }
-
-  .progress-bar {
-    width: 0%;
-    height: 20px;
-    background: linear-gradient(to right, #ff7675, #2ecc71);
-    border-radius: 20px;
-    transition: width 0.2s ease;
-  }
-
   .wrap {
     position: relative;
     display: inline-block;
@@ -151,10 +132,6 @@
   <input type="color" id="colorPicker" value="#e74c3c">
 </div>
 
-<div class="progress-container">
-  <div class="progress-bar" id="myBar"></div>
-</div>
-
 <div class="wrap">
   <div class="guide" id="guideLetter">A</div>
   <canvas id="canvas" width="350" height="350"></canvas>
@@ -177,10 +154,7 @@ const ctx = canvas.getContext("2d");
 let drawing = false;
 
 let rawPointsCount = 0; 
-let checkTimeout = null;
-
-// The standard goal point length required to complete a letter trace smoothly
-const REQUIRED_POINTS = 55;
+let evaluationTimeout = null; 
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 let index = 0;
@@ -192,7 +166,7 @@ function speakLetter(letter) {
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel(); 
     let msg = new SpeechSynthesisUtterance("Trace the letter " + letter);
-    msg.rate = 0.85; // Slightly slower, easier for kids to listen to
+    msg.rate = 0.9;
     speechSynthesis.speak(msg);
   }
 }
@@ -200,13 +174,12 @@ function speakLetter(letter) {
 function updateLetter() {
   document.getElementById("guideLetter").innerText = letters[index];
   speakLetter(letters[index]);
-  updateProgressBar();
 }
 
 // Mouse Controls
 canvas.addEventListener("mousedown", (e) => {
   if (letterDone) return;
-  clearTimeout(checkTimeout);
+  clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
   const coords = getMousePos(e);
@@ -214,11 +187,13 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mouseup", () => {
+  if (!drawing) return;
   drawing = false;
   startAutoCheckTimer();
 });
 
 canvas.addEventListener("mouseleave", () => {
+  if (!drawing) return;
   drawing = false;
   startAutoCheckTimer();
 });
@@ -232,7 +207,7 @@ canvas.addEventListener("mousemove", (e) => {
 // Touch Controls
 canvas.addEventListener("touchstart", (e) => {
   if (letterDone) return;
-  clearTimeout(checkTimeout);
+  clearTimeout(evaluationTimeout); 
   drawing = true;
   ctx.beginPath();
   const coords = getTouchPos(e);
@@ -241,6 +216,7 @@ canvas.addEventListener("touchstart", (e) => {
 }, { passive: false });
 
 canvas.addEventListener("touchend", () => {
+  if (!drawing) return;
   drawing = false;
   startAutoCheckTimer();
 });
@@ -267,7 +243,7 @@ function getTouchPos(e) {
 
 function drawStroke(x, y) {
   ctx.strokeStyle = document.getElementById("colorPicker").value;
-  ctx.lineWidth = 16; // Thicker crayon line to make it easier to fill!
+  ctx.lineWidth = 14; 
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
@@ -275,51 +251,34 @@ function drawStroke(x, y) {
   ctx.stroke();
   
   rawPointsCount++;
-  updateProgressBar();
-  
-  // Real-time automatic check: If they finish the lines while moving, award points instantly!
-  if (rawPointsCount >= REQUIRED_POINTS) {
-    checkTrace();
-  }
 }
 
-function updateProgressBar() {
-  let percentage = Math.min(100, Math.floor((rawPointsCount / REQUIRED_POINTS) * 100));
-  document.getElementById("myBar").style.width = percentage + "%";
-}
-
-// Allows gaps between drawing steps safely (helpful for multi-line characters)
+// Gives a 5-second window for kids to lift their fingers between strokes (like crossing a 'T' or 'A')
 function startAutoCheckTimer() {
-  clearTimeout(checkTimeout);
+  clearTimeout(evaluationTimeout);
   if (rawPointsCount > 0 && !letterDone) {
-    // Checks if they stopped drawing because they finished the letter shape
-    checkTimeout = setTimeout(checkTrace, 1500);
+    evaluationTimeout = setTimeout(checkTrace, 5000);
   }
 }
 
 function clearCanvas() {
-  clearTimeout(checkTimeout);
+  clearTimeout(evaluationTimeout);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   rawPointsCount = 0;
   letterDone = false;
   document.getElementById("result").innerText = "Draw on the letter!";
   document.getElementById("stars").innerText = "";
-  updateProgressBar();
 }
 
 function checkTrace() {
-  if (letterDone) return;
+  if (letterDone || rawPointsCount === 0) return;
 
-  // Verify if tracing has met our requirements
-  if (rawPointsCount < REQUIRED_POINTS) {
-    if (!drawing) {
-      document.getElementById("result").innerText = "Keep tracking! You are doing great!";
-    }
+  // Verify enough content was drawn
+  if (rawPointsCount < 20) {
+    document.getElementById("result").innerText = "Keep tracing to finish!";
     return;
   }
 
-  // Success route reached!
-  clearTimeout(checkTimeout);
   document.getElementById("result").innerText = "Correct! +5 Points";
   document.getElementById("stars").innerText = "⭐⭐⭐⭐⭐";
 
@@ -329,7 +288,7 @@ function checkTrace() {
   letterDone = true;
 
   if ('speechSynthesis' in window) {
-    let msg = new SpeechSynthesisUtterance("Super job! Beautiful tracing!");
+    let msg = new SpeechSynthesisUtterance("Super job! You got 5 points!");
     speechSynthesis.speak(msg);
   }
 }
